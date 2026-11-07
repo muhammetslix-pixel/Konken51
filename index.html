@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Konken 51 Yazboz</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#141f30;--panel2:#1b2940;--line:#2b3b54;--text:#f3f6fb;--muted:#a7b4c8;--accent:#55d6a3;--danger:#ff7777}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#101c2d,#080d17 65%);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:650px;margin:auto;padding:18px 14px 36px}
+header{display:flex;align-items:center;gap:12px;margin:8px 0 20px}.logo{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,#55d6a3,#1d9471);display:grid;place-items:center;font-size:25px;color:#082116;box-shadow:0 8px 24px #0006}
+h1{font-size:22px;margin:0}header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.card{background:#141f30ed;border:1px solid var(--line);border-radius:18px;padding:16px;margin:13px 0;box-shadow:0 10px 30px #0002}
+h2{font-size:16px;margin:0 0 12px}.muted{color:var(--muted);font-size:13px}
+.row{display:flex;gap:9px;align-items:center}.row>*{min-width:0}
+input,select,button{font:inherit;border-radius:12px;border:1px solid var(--line);background:#0d1726;color:var(--text);padding:12px}
+input{width:100%;min-width:0}button{cursor:pointer;font-weight:650}button.primary{background:var(--accent);color:#062116;border:0}button.secondary{background:var(--panel2)}button.danger{color:#ffd0d0;border-color:#7d3c49;background:#301b28}
+button:active{transform:scale(.98)}
+.counts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.counts button{padding:12px 6px}
+.counts button.active{background:var(--accent);color:#062116;border-color:var(--accent)}
+.players{display:grid;gap:9px}.player-row{display:flex;gap:8px}.player-row input{flex:1}.score{font-variant-numeric:tabular-nums;font-weight:800;min-width:58px;text-align:right;font-size:19px}
+.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 7px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:600}td.num{text-align:right;font-variant-numeric:tabular-nums}
+.round-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.entry{background:#0d1726;border:1px solid var(--line);border-radius:13px;padding:10px}.entry label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}.entry input{padding:10px}
+.entry.winner{border-color:#398d70;background:#102a27}.entry.winner input{opacity:.55}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+.notice{padding:10px 12px;background:#102a27;border:1px solid #28664f;border-radius:12px;color:#baf4db;font-size:13px;margin-top:10px}
+.small{font-size:12px;color:var(--muted);line-height:1.45}
+#history{display:grid;gap:8px}.history-item{background:#0d1726;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between;gap:10px}
+footer{text-align:center;color:#8290a5;font-size:11px;margin:22px 0}
+@media(max-width:390px){main{padding:14px 10px}.card{padding:13px}.round-grid{gap:7px}.entry{padding:8px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">♠</div><div><h1>Konken 51</h1><p>Dijital yazboz · 2–4 oyuncu</p></div></header>
+
+<section class="card">
+<h2>1. Oyuncular</h2>
+<div class="counts" id="countButtons">
+<button data-count="2" class="active">2 kişi</button><button data-count="3">3 kişi</button><button data-count="4">4 kişi</button>
+</div>
+<div class="players" id="players" style="margin-top:12px"></div>
+<p class="small">Oyuncu isimlerini yaz. Oyun sırasında değiştirebilirsin; puanlar korunur.</p>
+</section>
+
+<section class="card">
+<h2>2. Anlık skor</h2>
+<div class="tablewrap"><table><thead><tr><th>Oyuncu</th><th class="num">Toplam ceza</th></tr></thead><tbody id="scoreRows"></tbody></table></div>
+<div class="notice">Birinci bitiren oyuncuya otomatik <b>0</b> yazılır. Diğer oyuncuların ceza puanlarını gir.</div>
+</section>
+
+<section class="card">
+<h2>3. Yeni el gir</h2>
+<div class="muted" style="margin-bottom:11px">Önce eli bitireni seç. Kazananın puanı otomatik sıfır olur.</div>
+<div class="entry" style="margin-bottom:10px"><label for="winner">Bu eli kim bitirdi?</label><select id="winner"></select></div>
+<div class="round-grid" id="roundInputs"></div>
+<div class="actions" style="margin-top:13px"><button class="primary" id="addRound">Eli kaydet</button><button class="secondary" id="clearInputs">Temizle</button></div>
+<p class="small">Girilen değerler o elin ceza puanıdır. Toplam skor otomatik toplanır.</p>
+</section>
+
+<section class="card">
+<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">El geçmişi</h2><span class="muted" id="roundCount">0 el</span></div>
+<div id="history"><p class="muted">Henüz el kaydedilmedi.</p></div>
+<div class="actions" style="margin-top:13px"><button class="secondary" id="undo">Son eli geri al</button><button class="danger" id="newGame">Yeni oyun</button></div>
+</section>
+<footer>Veriler bu telefonda saklanır. Tarayıcı verilerini silersen oyun geçmişi de silinebilir.</footer>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+let state={count:2,names:['Oyuncu 1','Oyuncu 2','Oyuncu 3','Oyuncu 4'],rounds:[]};
+try{const saved=JSON.parse(localStorage.getItem('konken51-state'));if(saved&&saved.names&&saved.rounds)state={...state,...saved}}catch(e){}
+function save(){localStorage.setItem('konken51-state',JSON.stringify(state))}
+function totals(){let t=Array(state.count).fill(0);state.rounds.forEach(r=>r.scores.forEach((v,i)=>t[i]+=Number(v)||0));return t}
+function render(){
+ document.querySelectorAll('#countButtons button').forEach(b=>b.classList.toggle('active',+b.dataset.count===state.count));
+ $('#players').innerHTML='';
+ for(let i=0;i<state.count;i++){let d=document.createElement('div');d.className='player-row';d.innerHTML=`<input aria-label="Oyuncu ${i+1}" maxlength="20" value="${escapeHtml(state.names[i])}" data-name="${i}">`;$('#players').append(d)}
+ $('#winner').innerHTML=Array.from({length:state.count},(_,i)=>`<option value="${i}">${escapeHtml(state.names[i]||'Oyuncu '+(i+1))}</option>`).join('');
+ renderInputs();renderScores();renderHistory();save();
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderInputs(){let win=+$('#winner').value||0;$('#roundInputs').innerHTML='';for(let i=0;i<state.count;i++){let d=document.createElement('div');d.className='entry'+(i===win?' winner':'');d.innerHTML=`<label>${escapeHtml(state.names[i])} ${i===win?'· Kazanan':''}</label><input type="number" min="0" step="1" inputmode="numeric" placeholder="${i===win?'0 · otomatik':'Ceza puanı'}" data-score="${i}" ${i===win?'disabled value="0"':'value=""'}>`;$('#roundInputs').append(d)}}
+function renderScores(){let t=totals();$('#scoreRows').innerHTML=t.map((v,i)=>`<tr><td>${escapeHtml(state.names[i])}</td><td class="num">${v}</td></tr>`).join('')}
+function renderHistory(){let h=$('#history');$('#roundCount').textContent=state.rounds.length+' el';if(!state.rounds.length){h.innerHTML='<p class="muted">Henüz el kaydedilmedi.</p>';return}h.innerHTML=state.rounds.map((r,n)=>`<div class="history-item"><span><b>${n+1}. el</b> · Kazanan: ${escapeHtml(state.names[r.winner])}</span><span>${r.scores.reduce((a,b)=>a+b,0)} ceza</span></div>`).reverse().join('')}
+document.querySelectorAll('#countButtons button').forEach(b=>b.addEventListener('click',()=>{let n=+b.dataset.count;if(n<state.count&&state.rounds.length&&!confirm('Oyuncu sayısını azaltırsan oyun geçmişi sıfırlanacak. Devam?'))return;if(n!==state.count&&state.rounds.length)state.rounds=[];state.count=n;render()}));
+$('#players').addEventListener('input',e=>{if(e.target.dataset.name!==undefined){state.names[+e.target.dataset.name]=e.target.value;let old=$('#winner').value;$('#winner').innerHTML=Array.from({length:state.count},(_,i)=>`<option value="${i}">${escapeHtml(state.names[i]||'Oyuncu '+(i+1))}</option>`).join('');$('#winner').value=old;renderInputs();renderScores();renderHistory();save()}});
+$('#winner').addEventListener('change',renderInputs);
+$('#addRound').addEventListener('click',()=>{let winner=+$('#winner').value;let scores=Array(state.count).fill(0);let valid=true;document.querySelectorAll('[data-score]').forEach(inp=>{let i=+inp.dataset.score;if(i===winner)return;let v=inp.value.trim();if(v===''||Number(v)<0||!Number.isFinite(Number(v))){valid=false;inp.focus()}else scores[i]=Math.round(Number(v))});if(!valid){alert('Kazanan dışındaki oyuncuların ceza puanlarını gir. Puan yoksa 0 yaz.');return}state.rounds.push({winner,scores});render();});
+$('#clearInputs').addEventListener('click',renderInputs);
+$('#undo').addEventListener('click',()=>{if(!state.rounds.length)return;state.rounds.pop();render()});
+$('#newGame').addEventListener('click',()=>{if(confirm('Bütün el geçmişi ve skorlar sıfırlansın mı?')){state.rounds=[];render()}});
+render();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body></html>
